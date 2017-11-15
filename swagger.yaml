@@ -1,0 +1,201 @@
+swagger: "2.0"
+info:
+  title: FPC Compute API
+  version: "1.0.0"
+  description: FPC Compute API for batch style workloads in Autodesk
+  termsOfService: http://download.autodesk.com/us/FY14/Suites/LSA/en-US/
+  contact:
+    email: anvil@autodesk.com
+  license:
+    name: Autodesk
+    url: 'http://download.autodesk.com/us/FY14/Suites/LSA/en-US/lsa.html'
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+host: fpccompute.swagger.io
+basePath: /api/v1
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /jobs:
+    get:
+      tags:
+        - developers
+      summary: searches jobs
+      operationId: searchJobs
+      description: |
+        By passing in the appropriate options, you can search for
+        jobs in the system
+      parameters:
+        - name: tags
+          in: query
+          description: tags to filter by
+          required: false
+          type: array
+          collectionFormat: csv
+          items:
+            type: string
+        - name: search
+          in: query
+          description: search string for lookup
+          required: false
+          type: string
+        - name: ids
+          in: query
+          description: job ids to search for
+          required: false
+          type: array
+          collectionFormat: csv
+          items:
+            type: string
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: false
+          type: integer
+          format: int32
+        - name: skip
+          in: query
+          description: records to skip for pagination
+          required: false
+          type: integer
+          format: int32
+          
+      responses:
+        200:
+          description: search results matching optional filters. Returns all jobs by default
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Job1'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      tags:
+        - developers
+      summary: creates a job
+      operationId: addJob
+      description: Creates a job for a particular compute worker type
+      parameters:
+        - name: job
+          in: body
+          description: Job input
+          required: true
+          schema:
+            $ref: '#/definitions/NewJob'
+      responses:
+        200:
+          description: job response
+          schema:
+            $ref: '#/definitions/Job1'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /jobs/{id}:
+    get:
+      description: Returns a single job for given job ID
+      operationId: getJob
+      parameters:
+        - name: id
+          in: path
+          description: ID of job to fetch
+          required: true
+          type: string
+          format: base64
+      responses:
+        200:
+          description: job response
+          schema:
+            $ref: '#/definitions/Job1'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      description: deletes a single job for given job ID
+      operationId: deleteJob
+      parameters:
+        - name: id
+          in: path
+          description: ID of job to delete
+          required: true
+          type: string
+          format: base64
+      responses:
+        204:
+          description: job deleted
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Tags:
+    properties:
+      tags:
+        type: string
+  Service:
+    required:
+      - service
+    properties:
+      service:
+        type: string
+        example: sample-service:1.0.0
+  ServiceSchema:
+    required:
+      - schema
+    properties:
+       schema:
+        type: string
+        format: url
+        example: "http://forge.worker.api"
+  JobID:
+    required:
+      - id
+    properties:
+      id:
+        type: string
+        format: base64
+        example: 9AKaULgnR3eqfEKA4Wi8KDIyeTZZOXZWalkxcjZMNHRQM1FENHVaVVcrOVp5akVGWTBoWVR0dTBHRmJCZz0
+  NewJob:
+    allOf:
+      - $ref : '#/definitions/Service'
+      - $ref: '#/definitions/Tags'
+    required:
+      - service
+    properties:
+      payload:
+        type: object
+      tags:
+        type: string
+  Job1:
+    allOf:
+      - $ref: '#/definitions/Service'
+      - $ref: '#/definitions/JobID'
+      - required:
+        - status
+        properties:
+          status:
+            type: string
+            enum: [created, scheduled, in-progress, completed, canceled, failed]
+          progress:
+            type: string
+            format: int32
+  Error:
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
