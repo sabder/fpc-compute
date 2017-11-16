@@ -23,6 +23,16 @@ consumes:
 produces:
   - application/json
 paths:
+  /metadata/jobs:
+    get:
+      tags:
+        - admins
+      summary: search job definitions
+      description: get all job definitions
+      responses:
+        200:
+          description: list of definitions
+      
   /jobs:
     get:
       tags:
